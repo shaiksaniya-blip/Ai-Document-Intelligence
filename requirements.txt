@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+python-multipart
+requests
+chromadb
+faster-whisper
+pypdf
+python-docx
