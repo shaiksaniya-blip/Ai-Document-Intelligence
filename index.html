@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="description"
+      content="AI Meeting and Document Intelligence System">
+
+<title>AI Meeting & Document Intelligence</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background: #f4f7fb;
+        color: #222;
+    }
+
+    header {
+        background: #1f4e79;
+        color: white;
+        padding: 25px;
+        text-align: center;
+    }
+
+    header h1 {
+        margin: 0 0 8px 0;
+    }
+
+    header p {
+        margin: 0;
+    }
+
+    .container {
+        max-width: 1000px;
+        margin: 30px auto;
+        padding: 20px;
+    }
+
+    .welcome {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    .cards {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+
+    .card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .card h2 {
+        margin-top: 0;
+    }
+
+    button {
+        padding: 12px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        background: #1f4e79;
+        color: white;
+        font-size: 15px;
+    }
+
+    button:hover {
+        background: #173b5c;
+    }
+
+    button:disabled {
+        background: #9db3c6;
+        cursor: not-allowed;
+    }
+
+    input[type="file"] {
+        display: block;
+        width: 100%;
+        margin-bottom: 12px;
+    }
+
+    .status {
+        margin-top: 10px;
+        font-weight: bold;
+    }
+
+    #activeDoc {
+        display: none;
+        background: #e8f0f7;
+        padding: 12px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+        font-weight: bold;
+        color: #1f4e79;
+        word-break: break-word;
+    }
+
+    #chatBox {
+        height: 250px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px;
+        margin-bottom: 10px;
+        background: #f9fafc;
+    }
+
+    #questionInput {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 15px;
+    }
+
+    .user {
+        text-align: right;
+        margin: 8px;
+    }
+
+    .user span {
+        background: #1f4e79;
+        color: white;
+        padding: 10px;
+        border-radius: 10px;
+        display: inline-block;
+        max-width: 85%;
+        white-space: pre-wrap;
+    }
+
+    .ai {
+        text-align: left;
+        margin: 8px;
+    }
+
+    .ai span {
+        background: #e8f0f7;
+        padding: 10px;
+        border-radius: 10px;
+        display: inline-block;
+        max-width: 85%;
+        white-space: pre-wrap;
+    }
+
+    #summaryBox,
+    #transcriptBox,
+    #suggestionsBox {
+        margin-top: 15px;
+        padding: 15px;
+        background: #f9fafc;
+        border-radius: 8px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+
+    #transcriptBox {
+        display: none;
+    }
+
+    #suggestionsBox {
+        min-height: 24px;
+    }
+
+    .recording-buttons {
+        margin-top: 12px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    @media (max-width: 700px) {
+        .cards {
+            grid-template-columns: 1fr;
+        }
+
+        .container {
+            padding: 12px;
+        }
+
+        .card {
+            padding: 18px;
+        }
+
+        header h1 {
+            font-size: 24px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>🤖 AI Meeting & Document Intelligence System</h1>
+    <p>Smart Meeting and Document Assistant</p>
+</header>
+
+<div class="container">
+
+    <div class="welcome">
+        <h2>Welcome!</h2>
+        <p>Manage your meetings and documents using AI.</p>
+    </div>
+
+    <!-- ACTIVE DOCUMENT -->
+    <div id="activeDoc">
+        📌 Active Document:
+        <span id="activeDocName"></span>
+    </div>
+
+    <div class="cards">
+
+        <!-- DOCUMENT -->
+        <div class="card">
+
+            <h2>📄 Documents</h2>
+
+            <p>Upload and analyze your documents.</p>
+
+            <input
+                type="file"
+                id="docFile"
+                accept=".pdf,.docx,.txt"
+            >
+
+            <button id="uploadBtn" type="button">
+                Upload Document
+            </button>
+
+            <div
+                class="status"
+                id="uploadStatus">
+            </div>
+
+        </div>
+
+
+        <!-- MEETING -->
+        <div class="card">
+
+            <h2>🎙️ Meetings</h2>
+
+            <p>Upload meeting recordings.</p>
+
+            <input
+                type="file"
+                id="audioFile"
+                accept=".mp3,.wav,.m4a,.mp4,.webm,.ogg"
+            >
+
+            <button id="meetingBtn" type="button">
+                Upload Meeting
+            </button>
+
+            <div class="recording-buttons">
+
+                <button
+                    id="startRecordingBtn"
+                    type="button">
+                    🎤 Start Recording
+                </button>
+
+                <button
+                    id="stopRecordingBtn"
+                    type="button"
+                    disabled>
+                    ⏹️ Stop Recording
+                </button>
+
+            </div>
+
+            <div
+                class="status"
+                id="meetingStatus">
+            </div>
+
+            <div id="transcriptBox"></div>
+
+        </div>
+
+
+        <!-- SUMMARY -->
+        <div class="card">
+
+            <h2>🤖 AI Summary</h2>
+
+            <p>
+                Generate an intelligent summary from
+                your uploaded document or meeting.
+            </p>
+
+            <button id="summaryBtn" type="button">
+                Generate Summary
+            </button>
+
+            <div
+                id="summaryStatus"
+                class="status">
+            </div>
+
+            <div id="summaryBox"></div>
+
+        </div>
+
+
+        <!-- AI SUGGESTIONS -->
+        <div class="card">
+
+            <h2>💡 AI Suggestions</h2>
+
+            <p>
+                Get practical next steps, follow-up questions,
+                and risks from the active content.
+            </p>
+
+            <button id="suggestionsBtn" type="button">
+                Generate AI Suggestions
+            </button>
+
+            <div
+                id="suggestionsStatus"
+                class="status">
+            </div>
+
+            <div id="suggestionsBox">
+                Upload a document or process a meeting to get suggestions.
+            </div>
+
+        </div>
+
+
+        <!-- CHATBOT -->
+        <div class="card">
+
+            <h2>💬 Document AI Chatbot</h2>
+
+            <p>
+                Ask questions about your uploaded document.
+            </p>
+
+            <div id="chatBox"></div>
+
+            <input
+                type="text"
+                id="questionInput"
+                placeholder="Ask something about your document..."
+            >
+
+            <button id="askBtn" type="button">
+                Ask AI
+            </button>
+
+            <div
+                class="status"
+                id="askStatus">
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- BACKEND STATUS -->
+    <div
+        class="card"
+        style="margin-top:20px;text-align:center;"
+    >
+
+        <h2>Backend Status</h2>
+
+        <button id="healthBtn" type="button">
+            Check Backend
+        </button>
+
+        <div
+            class="status"
+            id="healthStatus">
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   CONFIGURATION
+   ===================================================== */
+
+const API_BASE = "http://127.0.0.1:8000";
+
+let uploadedFilename = "";
+let activeContentType = "document";
+
+let mediaRecorder = null;
+let audioChunks = [];
+let microphoneStream = null;
+
+
+/* =====================================================
+   HELPER FUNCTIONS
+   ===================================================== */
+
+function setActiveDocument(filename) {
+
+    if (!filename) {
+        return;
+    }
+
+    uploadedFilename = filename;
+
+    document.getElementById("activeDocName").textContent =
+        filename;
+
+    document.getElementById("activeDoc").style.display =
+        "block";
+
+    console.log("Active document:", uploadedFilename);
+}
+
+
+function clearResults() {
+
+    document.getElementById("summaryBox").textContent = "";
+
+    document.getElementById("summaryStatus").textContent = "";
+
+    document.getElementById("suggestionsStatus").textContent = "";
+
+    document.getElementById("suggestionsBox").textContent =
+        "Upload a document or process a meeting to get suggestions.";
+
+    document.getElementById("chatBox").innerHTML = "";
+
+    document.getElementById("askStatus").textContent = "";
+
+    document.getElementById("transcriptBox").textContent = "";
+
+    document.getElementById("transcriptBox").style.display =
+        "none";
+}
+
+
+async function getJsonResponse(response) {
+
+    try {
+        return await response.json();
+    } catch (error) {
+        return {};
+    }
+}
+
+
+/* =====================================================
+   DOCUMENT UPLOAD
+   ===================================================== */
+
+document.getElementById("uploadBtn").addEventListener(
+    "click",
+    uploadDocument
+);
+
+
+async function uploadDocument() {
+
+    const fileInput =
+        document.getElementById("docFile");
+
+    const status =
+        document.getElementById("uploadStatus");
+
+
+    if (
+        !fileInput.files ||
+        fileInput.files.length === 0
+    ) {
+
+        status.textContent =
+            "❌ Please choose a file first.";
+
+        status.style.color = "red";
+
+        return;
+    }
+
+
+    const file =
+        fileInput.files[0];
+
+
+    status.textContent =
+        "⏳ Uploading " +
+        file.name +
+        "...";
+
+    status.style.color =
+        "#1f4e79";
+
+
+    const formData =
+        new FormData();
+
+    formData.append("file", file);
+
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE + "/upload-document",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+
+        const data =
+            await getJsonResponse(response);
+
+
+        console.log("Upload response:", data);
+
+
+        if (
+            response.ok &&
+            data.success !== false
+        ) {
+
+            const filename =
+                data.filename ||
+                file.name;
+
+
+            setActiveDocument(filename);
+
+            activeContentType = "document";
+
+
+            clearResults();
+
+
+            status.textContent =
+                "✅ " +
+                (
+                    data.message ||
+                    "Document uploaded successfully"
+                ) +
+                " | File: " +
+                filename +
+                " | Chunks: " +
+                (
+                    data.chunks_stored ||
+                    0
+                );
+
+
+            status.style.color =
+                "green";
+
+
+        } else {
+
+            status.textContent =
+                "❌ Upload failed: " +
+                (
+                    data.detail ||
+                    data.message ||
+                    "Server error"
+                );
+
+            status.style.color =
+                "red";
+        }
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+            "❌ Cannot connect to backend: " +
+            error.message;
+
+        status.style.color =
+            "red";
+    }
+}
+
+
+/* =====================================================
+   ASK AI / RAG CHATBOT
+   ===================================================== */
+
+document.getElementById("askBtn").addEventListener(
+    "click",
+    askAI
+);
+
+
+document.getElementById("questionInput").addEventListener(
+    "keydown",
+    function(event) {
+
+        if (event.key === "Enter") {
+
+            event.preventDefault();
+
+            askAI();
+        }
+    }
+);
+
+
+async function askAI() {
+
+    const input =
+        document.getElementById("questionInput");
+
+    const question =
+        input.value.trim();
+
+
+    const status =
+        document.getElementById("askStatus");
+
+    const chatBox =
+        document.getElementById("chatBox");
+
+
+    if (!uploadedFilename) {
+
+        status.textContent =
+            "❌ Please upload a document first.";
+
+        status.style.color =
+            "red";
+
+        return;
+    }
+
+
+    if (!question) {
+
+        status.textContent =
+            "❌ Type a question first.";
+
+        status.style.color =
+            "red";
+
+        return;
+    }
+
+
+    /* USER MESSAGE */
+
+    const userMessage =
+        document.createElement("div");
+
+    userMessage.className =
+        "user";
+
+
+    const userSpan =
+        document.createElement("span");
+
+    userSpan.textContent =
+        "👤 " + question;
+
+
+    userMessage.appendChild(userSpan);
+
+    chatBox.appendChild(userMessage);
+
+
+    input.value = "";
+
+
+    status.textContent =
+        "🤔 AI is thinking...";
+
+    status.style.color =
+        "#1f4e79";
+
+
+    const formData =
+        new FormData();
+
+    formData.append(
+        "question",
+        question
+    );
+
+    formData.append(
+        "filename",
+        uploadedFilename
+    );
+
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE + "/ask",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+
+        const data =
+            await getJsonResponse(response);
+
+
+        if (response.ok) {
+
+            const aiMessage =
+                document.createElement("div");
+
+            aiMessage.className =
+                "ai";
+
+
+            const aiSpan =
+                document.createElement("span");
+
+            aiSpan.textContent =
+                "🤖 " +
+                (
+                    data.answer ||
+                    "No answer received."
+                );
+
+
+            aiMessage.appendChild(aiSpan);
+
+            chatBox.appendChild(aiMessage);
+
+
+            status.textContent = "";
+
+            chatBox.scrollTop =
+                chatBox.scrollHeight;
+
+
+        } else {
+
+            status.textContent =
+                "❌ Error: " +
+                (
+                    data.detail ||
+                    "Server error"
+                );
+
+            status.style.color =
+                "red";
+        }
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+            "❌ Cannot connect to backend: " +
+            error.message;
+
+        status.style.color =
+            "red";
+    }
+}
+
+
+/* =====================================================
+   AI SUMMARY
+   ===================================================== */
+
+document.getElementById("summaryBtn").addEventListener(
+    "click",
+    generateSummary
+);
+
+
+async function generateSummary() {
+
+    const status =
+        document.getElementById("summaryStatus");
+
+    const summaryBox =
+        document.getElementById("summaryBox");
+
+
+    if (!uploadedFilename) {
+
+        status.textContent =
+            "❌ Please upload a document first.";
+
+        status.style.color =
+            "red";
+
+        return;
+    }
+
+
+    status.textContent =
+        "🤖 AI is generating the summary...";
+
+    status.style.color =
+        "#1f4e79";
+
+
+    summaryBox.textContent =
+        "⏳ Please wait...";
+
+
+    const formData =
+        new FormData();
+
+    formData.append(
+        "filename",
+        uploadedFilename
+    );
+
+
+    /*
+       Documents use /summary.
+       Meetings use /meeting-summary.
+    */
+
+    const summaryEndpoint =
+        activeContentType === "meeting"
+            ? "/meeting-summary"
+            : "/summary";
+
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE + summaryEndpoint,
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+
+        const data =
+            await getJsonResponse(response);
+
+
+        if (response.ok) {
+
+            summaryBox.textContent =
+                data.summary ||
+                "No summary received.";
+
+
+            status.textContent =
+                "✅ Summary generated successfully.";
+
+            status.style.color =
+                "green";
+
+
+        } else {
+
+            status.textContent =
+                "❌ Summary failed: " +
+                (
+                    data.detail ||
+                    data.message ||
+                    "Server error"
+                );
+
+            status.style.color =
+                "red";
+
+            summaryBox.textContent = "";
+        }
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+            "❌ Cannot connect to backend: " +
+            error.message;
+
+        status.style.color =
+            "red";
+
+        summaryBox.textContent = "";
+    }
+}
+
+
+/* =====================================================
+   AI SUGGESTIONS
+   ===================================================== */
+
+document.getElementById("suggestionsBtn").addEventListener(
+    "click",
+    generateSuggestions
+);
+
+
+async function generateSuggestions() {
+
+    const status =
+        document.getElementById("suggestionsStatus");
+
+    const suggestionsBox =
+        document.getElementById("suggestionsBox");
+
+
+    if (!uploadedFilename) {
+
+        status.textContent =
+            "❌ Upload a document or process a meeting first.";
+
+        status.style.color =
+            "red";
+
+        return;
+    }
+
+
+    status.textContent =
+        "🤖 AI is generating suggestions...";
+
+    status.style.color =
+        "#1f4e79";
+
+
+    suggestionsBox.textContent =
+        "⏳ Please wait...";
+
+
+    const formData =
+        new FormData();
+
+    formData.append(
+        "filename",
+        uploadedFilename
+    );
+
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE + "/suggestions",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+
+        const data =
+            await getJsonResponse(response);
+
+
+        if (
+            response.ok &&
+            data.success !== false
+        ) {
+
+            suggestionsBox.textContent =
+                data.suggestions ||
+                "No suggestions were generated.";
+
+
+            status.textContent =
+                "✅ AI Suggestions generated successfully.";
+
+            status.style.color =
+                "green";
+
+
+        } else {
+
+            suggestionsBox.textContent = "";
+
+            status.textContent =
+                "❌ Suggestions failed: " +
+                (
+                    data.detail ||
+                    data.suggestions ||
+                    data.message ||
+                    "Server error"
+                );
+
+            status.style.color =
+                "red";
+        }
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        suggestionsBox.textContent = "";
+
+        status.textContent =
+            "❌ Cannot connect to backend: " +
+            error.message;
+
+        status.style.color =
+            "red";
+    }
+}
+
+
+/* =====================================================
+   MEETING FILE UPLOAD
+   ===================================================== */
+
+document.getElementById("meetingBtn").addEventListener(
+    "click",
+    uploadMeeting
+);
+
+
+function uploadMeeting() {
+
+    const fileInput =
+        document.getElementById("audioFile");
+
+    const status =
+        document.getElementById("meetingStatus");
+
+
+    if (
+        !fileInput.files ||
+        fileInput.files.length === 0
+    ) {
+
+        status.textContent =
+            "❌ Please choossechoose an audio/video file first.";
+
+        status.style.color =
+            "red";
+
+        return;
+    }
+
+
+    const file =
+        fileInput.files[0];
+
+
+    transcribeAudioFile(file);
+}
+
+
+/* =====================================================
+   TRANSCRIPTION
+   ===================================================== */
+
+async function transcribeAudioFile(
+    file,
+    sourceLabel = "Meeting"
+) {
+
+    const status =
+        document.getElementById("meetingStatus");
+
+
+    status.textContent =
+        "🎙️ Transcribing " +
+        file.name +
+        "...";
+
+    status.style.color =
+        "#1f4e79";
+
+
+    const formData =
+        new FormData();
+
+    formData.append(
+        "file",
+        file
+    );
+
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE + "/transcribe",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+
+        const data =
+            await getJsonResponse(response);
+
+
+        /*
+           FIXED:
+           The old code contained this broken JavaScript:
+
+           if (data.success !== false)
+               data.success !== false
+               {
+
+           It has been corrected to a normal condition.
+        */
+
+        if (
+            response.ok &&
+            data.success !== false
+        ) {
+
+            setActiveDocument(
+                data.filename ||
+                file.name
+            );
+
+
+            activeContentType = "meeting";
+
+
+            const transcriptBox =
+                document.getElementById(
+                    "transcriptBox"
+                );
+
+
+            transcriptBox.textContent =
+                data.transcript ||
+                "No speech was detected in the recording.";
+
+
+            transcriptBox.style.display =
+                "block";
+
+
+            document.getElementById(
+                "suggestionsBox"
+            ).textContent =
+                "Click Generate AI Suggestions to analyze this meeting.";
+
+
+            document.getElementById(
+                "summaryBox"
+            ).textContent = "";
+
+
+            document.getElementById(
+                "summaryStatus"
+            ).textContent = "";
+
+
+            let savedMessage = "";
+
+
+            if (data.saved_transcript) {
+
+                savedMessage =
+                    " | Saved transcript: " +
+                    data.saved_transcript;
+            }
+
+
+            status.textContent =
+                "✅ " +
+                (
+                    data.message ||
+                    "Meeting transcribed and indexed successfully"
+                ) +
+                savedMessage;
+
+
+            status.style.color =
+                "green";
+
+
+        } else {
+
+            status.textContent =
+                "⚠️ " +
+                (
+                    data.message ||
+                    data.detail ||
+                    "No speech was detected in the recording."
+                );
+
+            status.style.color =
+                "red";
+        }
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+            "❌ Cannot connect to backend: " +
+            error.message;
+
+        status.style.color =
+            "red";
+    }
+}
+
+
+/* =====================================================
+   LIVE MICROPHONE RECORDING
+   ===================================================== */
+
+document.getElementById(
+    "startRecordingBtn"
+).addEventListener(
+    "click",
+    startRecording
+);
+
+
+document.getElementById(
+    "stopRecordingBtn"
+).addEventListener(
+    "click",
+    stopRecording
+);
+
+
+async function startRecording() {
+
+    const status =
+        document.getElementById(
+            "meetingStatus"
+        );
+
+
+    const startBtn =
+        document.getElementById(
+            "startRecordingBtn"
+        );
+
+
+    const stopBtn =
+        document.getElementById(
+            "stopRecordingBtn"
+        );
+
+
+    try {
+
+        if (
+            !navigator.mediaDevices ||
+            !navigator.mediaDevices.getUserMedia
+        ) {
+
+            throw new Error(
+                "Microphone recording is not supported by this browser."
+            );
+        }
+
+
+        microphoneStream =
+            await navigator.mediaDevices.getUserMedia(
+                {
+                    audio: true
+                }
+            );
+
+
+        audioChunks = [];
+
+
+        /*
+           Select a browser-supported recording format.
+        */
+
+        let recorderOptions = {};
+
+
+        if (
+            MediaRecorder.isTypeSupported(
+                "audio/webm;codecs=opus"
+            )
+        ) {
+
+            recorderOptions = {
+                mimeType: "audio/webm;codecs=opus"
+            };
+
+        } else if (
+            MediaRecorder.isTypeSupported(
+                "audio/webm"
+            )
+        ) {
+
+            recorderOptions = {
+                mimeType: "audio/webm"
+            };
+        }
+
+
+        mediaRecorder =
+            new MediaRecorder(
+                microphoneStream,
+                recorderOptions
+            );
+
+
+        mediaRecorder.ondataavailable =
+            function(event) {
+
+                if (event.data && event.data.size > 0) {
+
+                    audioChunks.push(
+                        event.data
+                    );
+                }
+            };
+
+
+        mediaRecorder.onstop =
+            function() {
+
+                const mimeType =
+                    mediaRecorder.mimeType ||
+                    "audio/webm";
+
+
+                const audioBlob =
+                    new Blob(
+                        audioChunks,
+                        {
+                            type: mimeType
+                        }
+                    );
+
+
+                const audioFile =
+                    new File(
+                        [audioBlob],
+                        "recording_" +
+                        Date.now() +
+                        ".webm",
+                        {
+                            type: mimeType
+                        }
+                    );
+
+
+                transcribeAudioFile(
+                    audioFile,
+                    "Live Recording"
+                );
+
+
+                if (microphoneStream) {
+
+                    microphoneStream
+                        .getTracks()
+                        .forEach(
+                            track => track.stop()
+                        );
+
+                    microphoneStream = null;
+                }
+            };
+
+
+        mediaRecorder.start();
+
+
+        status.textContent =
+            "🔴 Recording... click Stop when done.";
+
+        status.style.color =
+            "#1f4e79";
+
+
+        startBtn.disabled = true;
+
+        stopBtn.disabled = false;
+
+
+    } catch (error) {
+
+        console.error(error);
+
+
+        if (microphoneStream) {
+
+            microphoneStream
+                .getTracks()
+                .forEach(
+                    track => track.stop()
+                );
+
+            microphoneStream = null;
+        }
+
+
+        status.textContent =
+            "❌ Could not access microphone: " +
+            error.message;
+
+        status.style.color =
+            "red";
+
+
+        startBtn.disabled = false;
+
+        stopBtn.disabled = true;
+    }
+}
+
+
+function stopRecording() {
+
+    const startBtn =
+        document.getElementById(
+            "startRecordingBtn"
+        );
+
+
+    const stopBtn =
+        document.getElementById(
+            "stopRecordingBtn"
+        );
+
+
+    if (
+        mediaRecorder &&
+        mediaRecorder.state !== "inactive"
+    ) {
+
+        mediaRecorder.stop();
+    }
+
+
+    startBtn.disabled = false;
+
+    stopBtn.disabled = true;
+}
+
+
+/* =====================================================
+   BACKEND HEALTH CHECK
+   ===================================================== */
+
+document.getElementById(
+    "healthBtn"
+).addEventListener(
+    "click",
+    checkHealth
+);
+
+
+async function checkHealth() {
+
+    const status =
+        document.getElementById(
+            "healthStatus"
+        );
+
+
+    status.textContent =
+        "⏳ Checking backend...";
+
+    status.style.color =
+        "#1f4e79";
+
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE + "/health"
+            );
+
+
+        const data =
+            await getJsonResponse(response);
+
+
+        if (
+            response.ok &&
+            data.status === "healthy"
+        ) {
+
+            status.textContent =
+                "✅ Backend is healthy and running.";
+
+            status.style.color =
+                "green";
+
+
+        } else {
+
+            status.textContent =
+                "⚠️ Backend responded but status is unclear.";
+
+            status.style.color =
+                "orange";
+        }
+
+
+    } catch (error) {
+
+        console.error(error);
+
+
+        status.textContent =
+            "❌ Cannot connect to backend: " +
+            error.message;
+
+        status.style.color =
+            "red";
+    }
+}
+
+
+/* =====================================================
+   PAGE LOAD
+   ===================================================== */
+
+window.addEventListener(
+    "load",
+    function() {
+
+        console.log(
+            "AI Meeting & Document Intelligence frontend loaded."
+        );
+
+        console.log(
+            "Backend:",
+            API_BASE
+        );
+    }
+);
+
+</script>
+
+</body>
+</html>
